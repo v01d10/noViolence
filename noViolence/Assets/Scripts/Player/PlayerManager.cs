@@ -8,4 +8,6 @@ public class PlayerManager : MonoBehaviour
     void Awake() {instance = this;}
     
     public Warehouse playerWarehouse;
+    
+    public bool playerBuilding;
 }

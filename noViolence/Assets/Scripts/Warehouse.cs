@@ -6,7 +6,7 @@ using TMPro;
 public class Warehouse : MonoBehaviour
 {
     public static Warehouse instance;
-    void Awake() {instance = this;}
+    void Awake() {instance = this; LoadResourceText();}
 
 [Header("Amounts")]
     public float woodAmount;

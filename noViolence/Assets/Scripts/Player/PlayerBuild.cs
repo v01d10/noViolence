@@ -7,7 +7,8 @@ public class PlayerBuild : MonoBehaviour
     public GameObject BuildPanel;
 
     public GameObject mainTentPrefab;
-    public GameObject kitchenPrefab;
+
+    public int mTentTime;
 
     public void OpenBuildPanel()
     {
@@ -23,12 +24,16 @@ public class PlayerBuild : MonoBehaviour
 
     public void BuildMainTent()
     {
-        SpawnPrefab(mainTentPrefab);
+        SpawnPrefab(mainTentPrefab, mTentTime);
     }
 
-    public void SpawnPrefab(GameObject prefab)
+    public void SpawnPrefab(GameObject prefab, int time)
     {
-        Instantiate(prefab, Camera.main.ScreenToWorldPoint(Input.mousePosition), Quaternion.identity);
+        OpenBuildPanel();
+        Instantiate(prefab, transform);
+        PlayerManager.instance.playerBuilding = true;
+        prefab.GetComponent<PlayerBuildPrefab>().buildTime = time;
     }
+
 
 }

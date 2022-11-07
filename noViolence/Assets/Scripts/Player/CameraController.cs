@@ -133,11 +133,11 @@ public class CameraController : MonoBehaviour
             newPosition += (transform.right * -movementSpeed);
         }
 
-        if(Input.GetKey(KeyCode.Q))
+        if(Input.GetKey(KeyCode.Q) && !PlayerManager.instance.playerBuilding)
         {
             newRotation *= Quaternion.Euler(Vector3.up * rotationAmount);
         }
-        if(Input.GetKey(KeyCode.E))
+        if(Input.GetKey(KeyCode.E) && !PlayerManager.instance.playerBuilding)
         {
             newRotation *= Quaternion.Euler(Vector3.up * -rotationAmount);
         }
