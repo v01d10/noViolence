@@ -6,7 +6,7 @@ public class CameraController : MonoBehaviour
 {
     public static CameraController instance;
 
-    public Transform followTransform;
+    public Camera cam;
     public Transform cameraTranform;
 
     public float normalSpeed;
@@ -14,86 +14,76 @@ public class CameraController : MonoBehaviour
     public float movementSpeed;
     public float movementTime;
     public float rotationAmount;
-    public Vector3 zoomAmount;
 
     public Vector3 newPosition;
     public Quaternion newRotation;
-    public Vector3 newZoom;
 
     public Vector3 dragStartPosition;
     public Vector3 dragCurrentPosition;
     public Vector3 rotateStartPosition;
     public Vector3 rotateCurrentPosition;
 
+[Header("Zoom")]
+    public float distance;
+    public float sensitivityDistance = 50;
+    public float damping = 5;
+    public float minFOV = 5;
+    public float maxFOV = 30;
+
+
     void Start()
     {
         instance = this;
         newPosition = transform.position;
         newRotation = transform.rotation;
-        newZoom = cameraTranform.localPosition;
+        cam = Camera.main;
+        distance = cam.fieldOfView;
     }
 
     void Update()
     {
-        if(followTransform != null)
-        {
-            transform.position = followTransform.position;
-        }
-        else
-        {
-            HandleMovementInput();
-            HandleMouseInput();
-        }
+        HandleMovementInput();
+        HandleMouseInput();
+        HandleZoom();
 
-        if(Input.GetKeyDown(KeyCode.Escape))
-        {
-            followTransform = null;
-            PlayerUnitNav.instance.zoomingOut = true;
-            PlayerUnitNav.instance.selectionMarker.SetActive(false);
-        }
     }
 
     void HandleMouseInput()
     {
-        if(Input.mouseScrollDelta.y != 0)
-        {
-            newZoom += Input.mouseScrollDelta.y * zoomAmount;
-        }
-
-        if(Input.GetMouseButtonDown(0) && Input.GetKey(KeyCode.LeftShift) && followTransform == null)
+        if (Input.GetMouseButtonDown(0) && Input.GetKey(KeyCode.LeftShift))
         {
             Plane plane = new Plane(Vector3.up, Vector3.zero);
-            
+
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
             float entry;
 
-            if(plane.Raycast(ray, out entry))
+            if (plane.Raycast(ray, out entry))
             {
                 dragStartPosition = ray.GetPoint(entry);
             }
         }
-        if(Input.GetMouseButton(0) && Input.GetKey(KeyCode.LeftShift) && followTransform == null)
+        if (Input.GetMouseButton(0) && Input.GetKey(KeyCode.LeftShift))
         {
             Plane plane = new Plane(Vector3.up, Vector3.zero);
-            
+
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
             float entry;
 
-            if(plane.Raycast(ray, out entry))
+            if (plane.Raycast(ray, out entry))
             {
                 dragCurrentPosition = ray.GetPoint(entry);
 
                 newPosition = transform.position + dragStartPosition - dragCurrentPosition;
-            }          
+            }
         }
 
-        if(Input.GetMouseButtonDown(2))
+        if (Input.GetMouseButtonDown(2))
         {
             rotateStartPosition = Input.mousePosition;
         }
-        if(Input.GetMouseButton(2))
+        if (Input.GetMouseButton(2))
         {
             rotateCurrentPosition = Input.mousePosition;
 
@@ -105,54 +95,48 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    void HandleZoom()
+    {
+        distance -= Input.GetAxis("Mouse ScrollWheel") * sensitivityDistance;
+        distance = Mathf.Clamp(distance, minFOV, maxFOV);
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, distance, Time.deltaTime * damping);
+
+    }
+
     void HandleMovementInput()
     {
-        if(!Input.GetKey(KeyCode.LeftShift))
-        {
+        if (!Input.GetKey(KeyCode.LeftShift))
             movementSpeed = normalSpeed;
-        }
         else
-        {
             movementSpeed = fastSpeed;
-        }
 
-        if(Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
         {
             newPosition += (transform.forward * movementSpeed);
         }
-        if(Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
         {
-            newPosition += (transform.forward * - movementSpeed);
+            newPosition += (transform.forward * -movementSpeed);
         }
-        if(Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
         {
             newPosition += (transform.right * movementSpeed);
         }
-        if(Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
         {
             newPosition += (transform.right * -movementSpeed);
         }
 
-        if(Input.GetKey(KeyCode.Q) && !PlayerManager.instance.playerBuilding)
+        if (Input.GetKey(KeyCode.Q) && !PlayerManager.instance.playerBuilding)
         {
             newRotation *= Quaternion.Euler(Vector3.up * rotationAmount);
         }
-        if(Input.GetKey(KeyCode.E) && !PlayerManager.instance.playerBuilding)
+        if (Input.GetKey(KeyCode.E) && !PlayerManager.instance.playerBuilding)
         {
             newRotation *= Quaternion.Euler(Vector3.up * -rotationAmount);
         }
 
-        if(Input.GetKey(KeyCode.R))
-        {
-            newZoom += zoomAmount;
-        }
-        if(Input.GetKey(KeyCode.F))
-        {
-            newZoom -= zoomAmount;
-        }
-
         transform.position = Vector3.Lerp(transform.position, newPosition, Time.deltaTime * movementTime);
         transform.rotation = Quaternion.Lerp(transform.rotation, newRotation, Time.deltaTime * movementTime);
-        cameraTranform.localPosition = Vector3.Lerp(cameraTranform.localPosition, newZoom, Time.deltaTime * movementTime);
     }
 }

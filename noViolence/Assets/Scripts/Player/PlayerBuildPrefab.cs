@@ -21,6 +21,10 @@ public class PlayerBuildPrefab : MonoBehaviour
     public bool isMoving;
     public bool isBuilding;
 
+    public LayerMask buildLayer;
+
+    public List<PlayerUnit> buildingUnits;
+
     Ray ray;
     RaycastHit hit;
 
@@ -36,54 +40,54 @@ public class PlayerBuildPrefab : MonoBehaviour
         prefabAnimator = GetComponentInChildren<Animator>();
 
         isMoving = true;
+        buildBarCanvas.SetActive(true);
     }
 
     void Update()
     {
         ray = cam.ScreenPointToRay(Input.mousePosition);
+        
+        Building();
 
-        if (Physics.Raycast(ray, out hit))
+        if (isBuilding && buildingUnits.Count > 0)
         {
-            Building();
-        }
-
-        if (isBuilding)
-        {
-            buildTimer -= Time.deltaTime;
-            buildBarCanvas.SetActive(true);
+            buildTimer -= (Time.deltaTime / 3) * buildingUnits.Count;
             buildTimerPerc = buildTimer / buildTime;
             buildBar.fillAmount = buildTimerPerc;
             buildTimerText.text = Mathf.Round(buildTimer).ToString();
 
-
             if (buildTimer <= 0)
             {
                 isBuilding = false;
+                transform.parent.gameObject.layer = 10;
+                model.SetActive(true);
                 Destroy(prefab);
                 Destroy(this);
-                model.SetActive(true);
             }
         }
     }
 
     void Building()
     {
-        if (isMoving && !Physics.CheckBox(hit.point, halfExt, transform.rotation, 7))
+        if (Physics.Raycast(ray, out hit))
         {
-            movePrefab();
-
-            rotatePrefab();
-
-            if (Input.GetMouseButtonDown(0))
+            if (isMoving && !Physics.CheckBox(hit.point, halfExt, transform.rotation, buildLayer))
             {
-                placePrefab();
+                movePrefab();
+                rotatePrefab();
+
+                if (Input.GetMouseButtonDown(0))
+                {
+                    placePrefab();
+                }
             }
+
         }
     }
 
     void movePrefab()
     {
-        buildPos = hit.point;
+        buildPos = new Vector3(hit.point.x, 0, hit.point.z);
         transform.position = buildPos;
         print(buildPos);
     }

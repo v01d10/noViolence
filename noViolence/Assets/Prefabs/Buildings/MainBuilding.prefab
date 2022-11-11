@@ -165,7 +165,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.69411767, g: 0.6666667, b: 0.48627454, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -304,6 +304,7 @@ GameObject:
   - component: {fileID: 3017607538541063982}
   - component: {fileID: 3017607538541063983}
   - component: {fileID: 6014030922934747351}
+  - component: {fileID: 267694378360926718}
   m_Layer: 9
   m_Name: MainBuilding
   m_TagString: Warehouse
@@ -340,21 +341,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 151fd283b13b8444788082a52ec77187, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  PlayerWarehouse: 0
   woodAmount: 0
   woodMaxAmount: 100
   stoneAmount: 0
   stoneMaxAmount: 100
+  foodAmount: 0
+  foodMaxAmount: 0
   berryAmount: 0
   berryMaxAmount: 0
   mushroomsAmount: 0
   mushroomsMaxAmount: 100
   wheatAmount: 0
   wheatMaxAmount: 100
-  woodText: {fileID: 0}
-  stoneText: {fileID: 0}
-  berriesText: {fileID: 0}
-  MushroomsText: {fileID: 0}
-  WheatText: {fileID: 0}
 --- !u!114 &6014030922934747351
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -376,7 +375,24 @@ MonoBehaviour:
   buildTimerText: {fileID: 6352198413121788921}
   isMoving: 0
   isBuilding: 0
+  buildLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  buildingUnits: []
   halfExt: {x: 3, y: 3, z: 3}
+--- !u!65 &267694378360926718
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3017607538541063985}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 4, y: 4, z: 5}
+  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!1 &4739379462545007628
 GameObject:
   m_ObjectHideFlags: 0
@@ -453,8 +469,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4286360241
+  m_fontColor: {r: 0.69411767, g: 0.6666667, b: 0.48627454, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

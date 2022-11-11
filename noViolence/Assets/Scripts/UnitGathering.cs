@@ -21,7 +21,7 @@ public class UnitGathering : MonoBehaviour
 
     public float GatherTime;
     public float gatherAmount;
-     public float RadiusAroundTarget = 1.5f;
+    public float RadiusAroundTarget = 1.5f;
 
     public bool toGather;
     public bool toUnload;
@@ -38,11 +38,11 @@ public class UnitGathering : MonoBehaviour
 
     void Start()
     {
-        if(playerUnit)
+        if (playerUnit)
         {
             thisUnit = GetComponentInParent<SelectableUnit>();
             whouse = PlayerManager.instance.playerWarehouse;
-            Warehouse.instance.LoadResourceText();          
+            Warehouse.instance.LoadResourceText();
         }
         else
         {
@@ -51,52 +51,53 @@ public class UnitGathering : MonoBehaviour
             whouse = eManager.enemyWarehouse;
         }
 
-        warehouseLocation = whouse.transform.position;
+        if (whouse != null)
+            warehouseLocation = whouse.transform.position;
     }
 
     void OnTriggerEnter(Collider other)
     {
-        if(resTarget != null && other.GetComponent<Resource>() == resTarget && resTarget.Gatherers.Contains(this))
+        if (resTarget != null && other.GetComponent<Resource>() == resTarget && resTarget.Gatherers.Contains(this))
         {
             res = other.GetComponent<Resource>();
 
             toGather = true;
 
-            if(cType.ToString() != res.rType.ToString())
+            if (cType.ToString() != res.rType.ToString())
             {
-                if(res.rType == Resource.ResType.Wood) cType = CarryType.Wood;
-                else if(res.rType == Resource.ResType.Stone) cType = CarryType.Stone;
-                else if(res.rType == Resource.ResType.Berry) cType = CarryType.Berry;
-                else if(res.rType == Resource.ResType.Mushrooms) cType = CarryType.Mushrooms;
-                else if(res.rType == Resource.ResType.Wheat) cType = CarryType.Wheat;
+                if (res.rType == Resource.ResType.Wood) cType = CarryType.Wood;
+                else if (res.rType == Resource.ResType.Stone) cType = CarryType.Stone;
+                else if (res.rType == Resource.ResType.Berry) cType = CarryType.Berry;
+                else if (res.rType == Resource.ResType.Mushrooms) cType = CarryType.Mushrooms;
+                else if (res.rType == Resource.ResType.Wheat) cType = CarryType.Wheat;
             }
 
             StartCoroutine("LoadResource");
 
-            if(!playerUnit)
+            if (!playerUnit)
             {
                 eUnit.checkIfGathering();
-            }           
+            }
         }
 
-        if(other.CompareTag("Warehouse") && toUnload)
+        if (other.CompareTag("Warehouse") && toUnload)
         {
             UnloadResouce();
         }
     }
 
-    
+
     IEnumerator LoadResource()
     {
-        if(cType == CarryType.Wood)
+        if (cType == CarryType.Wood)
             StartCoroutine("LoadWood");
-        else if(cType == CarryType.Stone)
+        else if (cType == CarryType.Stone)
             StartCoroutine("LoadStone");
-        else if(cType == CarryType.Berry)
+        else if (cType == CarryType.Berry)
             StartCoroutine("LoadBerry");
-        else if(cType == CarryType.Mushrooms)
+        else if (cType == CarryType.Mushrooms)
             StartCoroutine("LoadMushrooms");
-        else if(cType == CarryType.Wheat)
+        else if (cType == CarryType.Wheat)
             StartCoroutine("LoadWheat");
 
         TotalCarryAmount = CarryWood + CarryStone + CarryBerry + CarryMushrooms + CarryWheat;
@@ -115,11 +116,61 @@ public class UnitGathering : MonoBehaviour
         Warehouse.instance.LoadResourceText();
     }
 
+    void ResourceDepleted()
+    {
+        print("Resource depleted");
+        res.RemoveResource(res.TotalAmount);
+        Destroy(res.gameObject, 3);
+        thisUnit.MoveTo(warehouseLocation);
+        eUnit.MoveTo(warehouseLocation);
+        toUnload = true;
+        toGather = false;
+        thisUnit.Agent.isStopped = true;
+    }
+
+    void GoToWarehouse()
+    {
+        if (playerUnit)
+        {
+            thisUnit.Agent.isStopped = false;
+            thisUnit.MoveTo(warehouseLocation);
+        }
+        else
+        {
+            eUnit.agent.isStopped = false;
+            eUnit.MoveTo(warehouseLocation);
+        }
+
+        toUnload = true;
+        toGather = false;
+    }
+
+    void CheckForTarget()
+    {
+        if (resTarget != null)
+        {
+            if (playerUnit)
+                thisUnit.MoveTo(target);
+            else
+                eUnit.MoveTo(target);
+
+            toGather = true;
+        }
+        else
+        {
+            print("No target");
+            if (playerUnit)
+                thisUnit.Agent.isStopped = true;
+            else
+                eUnit.agent.isStopped = true;
+        }
+    }
+
     IEnumerator LoadWood()
     {
-        if(res.TotalAmount > gatherAmount)
+        if (res.TotalAmount > gatherAmount)
         {
-            if(TotalCarryAmount + gatherAmount <= MaxCarryAmount)
+            if (TotalCarryAmount + gatherAmount <= MaxCarryAmount)
             {
                 print("Gathering " + cType);
                 res.RemoveResource(gatherAmount);
@@ -129,45 +180,22 @@ public class UnitGathering : MonoBehaviour
             }
             else
             {
-                if(playerUnit)
-                {
-                    thisUnit.Agent.isStopped = false;
-                    thisUnit.MoveTo(warehouseLocation);
-                }
-                else
-                {
-                    eUnit.agent.isStopped = false;
-                    eUnit.MoveTo(warehouseLocation);
-                }
-
-                toUnload = true;
-                toGather = false;
+                GoToWarehouse();
                 yield return null;
             }
         }
         else
         {
-            print("Resource depleted");
-            res.RemoveResource(res.TotalAmount);
             CarryWood += res.TotalAmount;
-            Destroy(res.gameObject, 3);
-
-            if(playerUnit)
-                thisUnit.MoveTo(warehouseLocation);
-            else
-                eUnit.MoveTo(warehouseLocation);
-
-            toUnload = true;
-            toGather = false;
-            thisUnit.Agent.isStopped = true;
+            ResourceDepleted();
         }
     }
 
     IEnumerator LoadStone()
     {
-        if(res.TotalAmount > gatherAmount)
+        if (res.TotalAmount > gatherAmount)
         {
-            if(TotalCarryAmount + gatherAmount <= MaxCarryAmount)
+            if (TotalCarryAmount + gatherAmount <= MaxCarryAmount)
             {
                 print("Gathering " + cType);
                 res.RemoveResource(gatherAmount);
@@ -178,34 +206,22 @@ public class UnitGathering : MonoBehaviour
             }
             else
             {
-                thisUnit.Agent.isStopped = false;
-                eUnit.agent.isStopped = false;
-                thisUnit.MoveTo(warehouseLocation);
-                eUnit.MoveTo(warehouseLocation);
-                toUnload = true;
-                toGather = false;
+                GoToWarehouse();
                 yield return null;
             }
         }
         else
         {
-            print("Resource depleted");
-            res.RemoveResource(res.TotalAmount);
             CarryStone += res.TotalAmount;
-            Destroy(res.gameObject, 3);
-            thisUnit.MoveTo(warehouseLocation);
-            eUnit.MoveTo(warehouseLocation);
-            toUnload = true;
-            toGather = false;
-            thisUnit.Agent.isStopped = true;
+            ResourceDepleted();
         }
     }
-    
+
     IEnumerator LoadBerry()
     {
-        if(res.TotalAmount > gatherAmount)
+        if (res.TotalAmount > gatherAmount)
         {
-            if(TotalCarryAmount + gatherAmount <= MaxCarryAmount)
+            if (TotalCarryAmount + gatherAmount <= MaxCarryAmount)
             {
                 print("Gathering " + cType);
                 res.RemoveResource(gatherAmount);
@@ -216,34 +232,23 @@ public class UnitGathering : MonoBehaviour
             }
             else
             {
-                thisUnit.Agent.isStopped = false;
-                eUnit.agent.isStopped = false;
-                thisUnit.MoveTo(warehouseLocation);
-                eUnit.MoveTo(warehouseLocation);
-                toUnload = true;
-                toGather = false;
+                GoToWarehouse();
                 yield return null;
             }
         }
         else
         {
-            print("Resource depleted");
-            res.RemoveResource(res.TotalAmount);
             CarryBerry += res.TotalAmount;
-            Destroy(res.gameObject, 3);
-            thisUnit.MoveTo(warehouseLocation);
-            eUnit.MoveTo(warehouseLocation);
-            toUnload = true;
-            toGather = false;
-            thisUnit.Agent.isStopped = true;
+            ResourceDepleted();
+
         }
     }
 
     IEnumerator LoadMushrooms()
     {
-        if(res.TotalAmount > gatherAmount)
+        if (res.TotalAmount > gatherAmount)
         {
-            if(TotalCarryAmount + gatherAmount <= MaxCarryAmount)
+            if (TotalCarryAmount + gatherAmount <= MaxCarryAmount)
             {
                 print("Gathering " + cType);
                 res.RemoveResource(gatherAmount);
@@ -254,99 +259,58 @@ public class UnitGathering : MonoBehaviour
             }
             else
             {
-                thisUnit.Agent.isStopped = false;
-                eUnit.agent.isStopped = false;
-                thisUnit.MoveTo(warehouseLocation);
-                eUnit.MoveTo(warehouseLocation);
-                toUnload = true;
-                toGather = false;
+                GoToWarehouse();
                 yield return null;
             }
         }
         else
         {
-            print("Resource depleted");
-            res.RemoveResource(res.TotalAmount);
             CarryMushrooms += res.TotalAmount;
-            Destroy(res.gameObject, 3);
-            thisUnit.MoveTo(warehouseLocation);
-            eUnit.MoveTo(warehouseLocation);
-            toUnload = true;
-            toGather = false;
-            thisUnit.Agent.isStopped = true;
+            ResourceDepleted();
         }
     }
 
     IEnumerator LoadWheat()
     {
-        if(res.TotalAmount > gatherAmount)
+        if (res.TotalAmount > gatherAmount)
         {
-            if(TotalCarryAmount + gatherAmount <= MaxCarryAmount)
+            if (TotalCarryAmount + gatherAmount <= MaxCarryAmount)
             {
                 print("Gathering " + cType);
                 res.RemoveResource(gatherAmount);
                 CarryWheat += gatherAmount;
                 yield return new WaitForSeconds(GatherTime);
                 StartCoroutine("LoadResource");
-
             }
             else
             {
-                thisUnit.Agent.isStopped = false;
-                eUnit.agent.isStopped = false;
-                thisUnit.MoveTo(warehouseLocation);
-                eUnit.MoveTo(warehouseLocation);
-                toUnload = true;
-                toGather = false;
+                GoToWarehouse();
                 yield return null;
             }
         }
         else
         {
-            print("Resource depleted");
-            res.RemoveResource(res.TotalAmount);
             CarryWheat += res.TotalAmount;
-            Destroy(res.gameObject, 3);
-            thisUnit.MoveTo(warehouseLocation);
-            eUnit.MoveTo(warehouseLocation);
-            toUnload = true;
-            toGather = false;
-            thisUnit.Agent.isStopped = true;
+            ResourceDepleted();
         }
     }
-    
+
     void UnloadWood()
     {
-        if(whouse.woodMaxAmount >= CarryWood)
+        if (whouse.woodMaxAmount >= CarryWood)
         {
             whouse.woodAmount += CarryWood;
             CarryWood = 0;
             toUnload = false;
 
-            if(resTarget != null)
-            {
-                if(playerUnit)
-                    thisUnit.MoveTo(target);
-                else
-                    eUnit.MoveTo(target);
-
-                toGather = true;
-            }
-            else
-            {
-                print("No target");
-                if(playerUnit)
-                    thisUnit.Agent.isStopped = true;
-                else
-                    eUnit.agent.isStopped = true;
-            }
+            CheckForTarget();
         }
         else
         {
             whouse.woodAmount += whouse.woodMaxAmount - whouse.woodAmount;
             CarryWood -= whouse.woodMaxAmount - whouse.woodAmount;
 
-            if(playerUnit)
+            if (playerUnit)
                 thisUnit.Agent.isStopped = true;
             else
                 eUnit.agent.isStopped = true;
@@ -356,36 +320,20 @@ public class UnitGathering : MonoBehaviour
 
     void UnloadStone()
     {
-        if(whouse.stoneMaxAmount >= CarryStone)
+        if (whouse.stoneMaxAmount >= CarryStone)
         {
             whouse.stoneAmount += CarryStone;
             CarryStone = 0;
             toUnload = false;
 
-            if(resTarget != null)
-            {
-                if(playerUnit)
-                    thisUnit.MoveTo(target);
-                else
-                    eUnit.MoveTo(target);
-
-                toGather = true;
-            }
-            else
-            {
-                print("No target");
-                if(playerUnit)
-                    thisUnit.Agent.isStopped = true;
-                else
-                    eUnit.agent.isStopped = true;
-            }
+            CheckForTarget();
         }
         else
         {
             whouse.stoneAmount += whouse.stoneMaxAmount - whouse.stoneAmount;
             CarryStone -= whouse.stoneMaxAmount - whouse.stoneAmount;
 
-            if(playerUnit)
+            if (playerUnit)
                 thisUnit.Agent.isStopped = true;
             else
                 eUnit.agent.isStopped = true;
@@ -395,36 +343,20 @@ public class UnitGathering : MonoBehaviour
 
     void UnloadBerry()
     {
-        if(whouse.berryMaxAmount >= CarryBerry)
+        if (whouse.berryMaxAmount >= CarryBerry)
         {
             whouse.berryAmount += CarryBerry;
             CarryBerry = 0;
             toUnload = false;
 
-            if(resTarget != null)
-            {
-                if(playerUnit)
-                    thisUnit.MoveTo(target);
-                else
-                    eUnit.MoveTo(target);
-
-                toGather = true;
-            }
-            else
-            {
-                print("No target");
-                if(playerUnit)
-                    thisUnit.Agent.isStopped = true;
-                else
-                    eUnit.agent.isStopped = true;
-            }
+            CheckForTarget();
         }
         else
         {
             whouse.berryAmount += whouse.berryMaxAmount - whouse.berryAmount;
             CarryBerry -= whouse.berryMaxAmount - whouse.berryAmount;
 
-            if(playerUnit)
+            if (playerUnit)
                 thisUnit.Agent.isStopped = true;
             else
                 eUnit.agent.isStopped = true;
@@ -434,36 +366,20 @@ public class UnitGathering : MonoBehaviour
 
     void UnloadMushrooms()
     {
-        if(whouse.mushroomsMaxAmount >= CarryMushrooms)
+        if (whouse.mushroomsMaxAmount >= CarryMushrooms)
         {
             whouse.mushroomsAmount += CarryMushrooms;
             CarryMushrooms = 0;
             toUnload = false;
 
-            if(resTarget != null)
-            {
-                if(playerUnit)
-                    thisUnit.MoveTo(target);
-                else
-                    eUnit.MoveTo(target);
-
-                toGather = true;
-            }
-            else
-            {
-                print("No target");
-                if(playerUnit)
-                    thisUnit.Agent.isStopped = true;
-                else
-                    eUnit.agent.isStopped = true;
-            }
+            CheckForTarget();
         }
         else
         {
             whouse.mushroomsAmount += whouse.mushroomsMaxAmount - whouse.mushroomsAmount;
             CarryMushrooms -= whouse.mushroomsMaxAmount - whouse.mushroomsAmount;
 
-            if(playerUnit)
+            if (playerUnit)
                 thisUnit.Agent.isStopped = true;
             else
                 eUnit.agent.isStopped = true;
@@ -473,36 +389,20 @@ public class UnitGathering : MonoBehaviour
 
     void UnloadWheat()
     {
-        if(whouse.wheatMaxAmount >= CarryWheat)
+        if (whouse.wheatMaxAmount >= CarryWheat)
         {
             whouse.wheatAmount += CarryWheat;
             CarryWheat = 0;
             toUnload = false;
 
-            if(resTarget != null)
-            {
-                if(playerUnit)
-                    thisUnit.MoveTo(target);
-                else
-                    eUnit.MoveTo(target);
-
-                toGather = true;
-            }
-            else
-            {
-                print("No target");
-                if(playerUnit)
-                    thisUnit.Agent.isStopped = true;
-                else
-                    eUnit.agent.isStopped = true;
-            }
+            CheckForTarget();
         }
         else
         {
             whouse.wheatAmount += whouse.wheatMaxAmount - whouse.wheatAmount;
             CarryWheat -= whouse.wheatMaxAmount - whouse.wheatAmount;
 
-            if(playerUnit)
+            if (playerUnit)
                 thisUnit.Agent.isStopped = true;
             else
                 eUnit.agent.isStopped = true;

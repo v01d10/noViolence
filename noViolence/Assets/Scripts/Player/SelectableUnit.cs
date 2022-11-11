@@ -20,6 +20,7 @@ public class SelectableUnit : MonoBehaviour
 
     public void MoveTo(Vector3 Position)
     {
+        Agent.isStopped = false;
         Agent.SetDestination(Position);
     }
 

@@ -4,32 +4,28 @@ using UnityEngine;
 
 public class PlayerBuild : MonoBehaviour
 {
-    public GameObject BuildPanel;
-
+    Warehouse whouse;
     public GameObject mainTentPrefab;
 
     public int mTentTime;
 
-    public void OpenBuildPanel()
-    {
-        if(!BuildPanel.activeInHierarchy)
-        {
-            BuildPanel.SetActive(true);
-        }
-        else
-        {
-            BuildPanel.SetActive(false);
-        }
-    }
+
+    public int mTentWprice, mTentSprice;
+    public int kitchenWprice, kitchenSprice;
+
 
     public void BuildMainTent()
     {
-        SpawnPrefab(mainTentPrefab, mTentTime);
+        whouse = PlayerManager.instance.playerWarehouse;
+
+        if(whouse.woodAmount >= mTentWprice && whouse.stoneAmount >= mTentSprice)
+            SpawnPrefab(mainTentPrefab, mTentTime);
+        else {print ("Not enough resources...");}
     }
 
     public void SpawnPrefab(GameObject prefab, int time)
     {
-        OpenBuildPanel();
+        uiManager.instance.OpenBuildScroll();
         Instantiate(prefab, transform);
         PlayerManager.instance.playerBuilding = true;
         prefab.GetComponent<PlayerBuildPrefab>().buildTime = time;
