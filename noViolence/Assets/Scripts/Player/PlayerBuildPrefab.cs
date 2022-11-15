@@ -2,137 +2,86 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.VFX;
 using TMPro;
-using FirstGearGames.SmoothCameraShaker;
 
 public class PlayerBuildPrefab : MonoBehaviour
 {
-    Camera cam;
     public float buildTime;
     public float buildTimer;
-    public int maxBuilders;
 
     float buildTimerPerc;
 
     public GameObject prefab;
     public GameObject model;
 
+    public GameObject buildBarCanvas;
+    public Image buildBar;
+    public TextMeshProUGUI buildTimerText;
+
     public bool isMoving;
     public bool isBuilding;
 
-    public LayerMask blockBuildLayer;
-
-    Ray ray;
-    RaycastHit hit;
-    Vector3 buildPos;
+    public LayerMask buildLayer;
 
     public List<PlayerUnit> buildingUnits;
 
-    [Header("Other")]
-    Renderer[] prefabRenderer;
-    public Material prefabWhiteMat;
-    public Material prefabRedMat;
+    Ray ray;
+    RaycastHit hit;
 
+    Vector3 buildPos;
     public Vector3 halfExt = new Vector3(3, 3, 3);
 
+    Camera cam;
     Animator prefabAnimator;
-    VisualEffect SmokePoof;
-    public float smokePlayDelay;
 
-    [Header("BuildIndicator")]
-    public GameObject buildBarCanvas;
-    public Image buildBar;
-    public GameObject noBuilderIcon;
-    public TextMeshProUGUI buildTimerText;
-
-    void Awake()
+    void Start()
     {
         cam = Camera.main;
         prefabAnimator = GetComponentInChildren<Animator>();
-        prefabRenderer = prefab.GetComponentsInChildren<MeshRenderer>();
-        SmokePoof = GetComponentInChildren<VisualEffect>();
 
         isMoving = true;
+        buildBarCanvas.SetActive(true);
     }
 
     void Update()
     {
         ray = cam.ScreenPointToRay(Input.mousePosition);
-
-        Placing();
+        
         Building();
-    }
 
-    void Placing()
-    {
-        if (Physics.Raycast(ray, out hit) && isMoving)
+        if (isBuilding && buildingUnits.Count > 0)
         {
-            movePrefab();
-            rotatePrefab();
-            if (!Physics.CheckBox(transform.position, halfExt, transform.rotation, blockBuildLayer))
-            {
-                for (int i = 0; i < prefabRenderer.Length; i++)
-                {
-                    prefabRenderer[i].material = prefabWhiteMat;
+            buildTimer -= (Time.deltaTime / 3) * buildingUnits.Count;
+            buildTimerPerc = buildTimer / buildTime;
+            buildBar.fillAmount = buildTimerPerc;
+            buildTimerText.text = Mathf.Round(buildTimer).ToString();
 
-                }
-                if (Input.GetMouseButtonDown(0))
-                {
-                    placePrefab();
-                }
-            }
-            else
+            if (buildTimer <= 0)
             {
-                for (int i = 0; i < prefabRenderer.Length; i++)
-                {
-                    prefabRenderer[i].material = prefabRedMat;
-
-                }
+                isBuilding = false;
+                transform.parent.gameObject.layer = 10;
+                model.SetActive(true);
+                Destroy(prefab);
+                Destroy(this);
             }
         }
     }
 
     void Building()
     {
-        if (isBuilding)
+        if (Physics.Raycast(ray, out hit))
         {
-            if (buildingUnits.Count > 0)
+            if (isMoving && !Physics.CheckBox(hit.point, halfExt, transform.rotation, buildLayer))
             {
-                noBuilderIcon.SetActive(false);
-                buildTimerText.gameObject.SetActive(true);
-                float dist;
+                movePrefab();
+                rotatePrefab();
 
-                foreach (PlayerUnit unit in buildingUnits)
+                if (Input.GetMouseButtonDown(0))
                 {
-                    dist = Vector3.Distance(unit.transform.position, transform.position);
-
-                    if (dist < 1f)
-                        buildTimer -= (Time.deltaTime / maxBuilders);
-                    else
-                        return;
-                }
-
-                buildTimerPerc = buildTimer / buildTime;
-                buildBar.fillAmount = buildTimerPerc;
-                buildTimerText.text = Mathf.Round(buildTimer).ToString();
-
-                if (buildTimer <= 0)
-                {
-                    sfxManager.instance.PlaySFX(sfxManager.instance.buildComplete);
-                    isBuilding = false;
-                    transform.parent.gameObject.layer = 10;
-                    model.SetActive(true);
-                    Destroy(prefab);
-                    Destroy(this);
+                    placePrefab();
                 }
             }
-            else
-            {
-                noBuilderIcon.SetActive(true);
-                buildTimerText.gameObject.SetActive(false);
-                prefabAnimator.Play("noBuilderPulse");
-            }
+
         }
     }
 
@@ -147,21 +96,16 @@ public class PlayerBuildPrefab : MonoBehaviour
     {
         if (Input.GetKey(KeyCode.Q))
         {
-            transform.RotateAround(transform.position, Vector3.up, 60 * Time.deltaTime);
+            transform.RotateAround(transform.position, Vector3.up, 30 * Time.deltaTime);
         }
         else if (Input.GetKey(KeyCode.E))
         {
-            transform.RotateAround(transform.position, -Vector3.up, 60 * Time.deltaTime);
+            transform.RotateAround(transform.position, -Vector3.up, 30 * Time.deltaTime);
         }
     }
 
     void placePrefab()
     {
-        gameObject.layer = 9;
-        CameraShakerHandler.Shake(uiManager.instance.buildShake);
-        sfxManager.instance.PlaySFX(sfxManager.instance.buildPlacement);
-        Invoke("PlaySmoke", smokePlayDelay);
-
         transform.position = buildPos;
         prefabAnimator.SetTrigger("Place");
 
@@ -169,12 +113,6 @@ public class PlayerBuildPrefab : MonoBehaviour
         isMoving = false;
         PlayerManager.instance.playerBuilding = false;
         buildTimer = buildTime;
-        buildBar.gameObject.SetActive(true);
-    }
-
-    void PlaySmoke()
-    {
-        SmokePoof.Play();
     }
 }
 
