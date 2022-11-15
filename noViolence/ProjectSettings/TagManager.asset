@@ -9,6 +9,10 @@ TagManager:
   - Floor
   - Tree
   - Stone
+  - Kitchen
+  - PlayerUnit
+  - EnemyUnit
+  - Kitchen
   layers:
   - Default
   - TransparentFX
@@ -16,13 +20,13 @@ TagManager:
   - 
   - Water
   - UI
-  - Units
+  - 
   - Floor
   - Resource
   - BuildPrefab
   - Building
-  - 
-  - 
+  - PlayerUnit
+  - EnemyUnit
   - 
   - 
   - 

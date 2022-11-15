@@ -99,7 +99,7 @@ public class CameraController : MonoBehaviour
     {
         distance -= Input.GetAxis("Mouse ScrollWheel") * sensitivityDistance;
         distance = Mathf.Clamp(distance, minFOV, maxFOV);
-        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, distance, Time.deltaTime * damping);
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, distance, Time.fixedDeltaTime * damping);
 
     }
 
@@ -136,7 +136,7 @@ public class CameraController : MonoBehaviour
             newRotation *= Quaternion.Euler(Vector3.up * -rotationAmount);
         }
 
-        transform.position = Vector3.Lerp(transform.position, newPosition, Time.deltaTime * movementTime);
-        transform.rotation = Quaternion.Lerp(transform.rotation, newRotation, Time.deltaTime * movementTime);
+        transform.position = Vector3.Lerp(transform.position, newPosition, Time.fixedDeltaTime * movementTime);
+        transform.rotation = Quaternion.Lerp(transform.rotation, newRotation, Time.fixedDeltaTime * movementTime);
     }
 }

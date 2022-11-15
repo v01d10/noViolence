@@ -2,11 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using FirstGearGames.SmoothCameraShaker;
 
 public class uiManager : MonoBehaviour
 {
     public static uiManager instance;
     void Awake() { instance = this; }
+
+    [Header("MainPanel")]
+    public GameObject MainPanel;
+    public GameObject BuildScroll;
+    public GameObject WarehouseScroll;
+    public GameObject MainBuildingScroll;
+
+    [Header("MainBuilding")]
+    public TextMeshProUGUI apostleAmount;
+    public TextMeshProUGUI apostleMaxAmount;
 
     [Header("Warehouse")]
     public TextMeshProUGUI woodText;
@@ -15,15 +26,17 @@ public class uiManager : MonoBehaviour
     public TextMeshProUGUI MushroomsText;
     public TextMeshProUGUI WheatText;
 
-    [Header("MainPanel")]
-    public GameObject MainPanel;
-    public GameObject BuildScroll;
-    public GameObject WarehouseScroll;
-
     public Animator mainPanelAnimator;
     bool mainPanelOpened;
     GameObject ob;
 
+    [Header("Shakes")]
+    public ShakeData buildShake;
+    
+    void Start()
+    {
+        mainPanelAnimator = GetComponent<Animator>();
+    }
     void OpenMainPanel()
     {
         if (!mainPanelOpened)
@@ -33,44 +46,77 @@ public class uiManager : MonoBehaviour
         }
         else
         {
-            mainPanelAnimator.Play("mainPanelClose");
-            mainPanelOpened = false;
+            CloseMainPanel();
         }
+    }
+
+    void CloseMainPanel()
+    {
+        mainPanelAnimator.Play("mainPanelClose");
+        mainPanelOpened = false;
     }
 
     public void OpenBuildScroll()
     {
-        OpenMainPanel();
-
         if (!BuildScroll.activeInHierarchy)
         {
-            if(WarehouseScroll.activeInHierarchy)
-                WarehouseScroll.SetActive(false);
-
+            if(!mainPanelOpened)
+                OpenMainPanel();
+                
+            DisableScrolls();
             BuildScroll.SetActive(true);
         }
         else
         {
-            DisableObject(BuildScroll, 0.5f);
+            CloseMainPanel();
+        }
+    }
+
+    public void OpenMainBuildingPanel()
+    {
+        if (!MainBuildingScroll.activeInHierarchy)
+        {
+            if(!mainPanelOpened)
+                OpenMainPanel();
+
+            DisableScrolls();
+            MainBuildingScroll.SetActive(true);
+        }
+        else
+        {
+            CloseMainPanel();
         }
     }
 
     public void OpenWarehouseScroll()
     {
-        OpenMainPanel();
-
         if (!WarehouseScroll.activeInHierarchy)
         {
-            if(BuildScroll.activeInHierarchy)
-                BuildScroll.SetActive(false);
-
+            if(!mainPanelOpened)
+                OpenMainPanel();
+                
+            DisableScrolls();
             WarehouseScroll.SetActive(true);
             PlayerManager.instance.playerWarehouse.LoadResourceText();
         }
         else
         {
-            DisableObject(WarehouseScroll, 0.5f);
+            CloseMainPanel();
         }
+    }
+
+    void DisableScrolls()
+    {
+        if (BuildScroll.activeInHierarchy)
+            BuildScroll.SetActive(false);
+
+        if (WarehouseScroll.activeInHierarchy)
+            WarehouseScroll.SetActive(false);
+
+        if (MainBuildingScroll.activeInHierarchy)
+            MainBuildingScroll.SetActive(false);
+
+
     }
 
     void DisableObject(GameObject obj, float time)
@@ -81,7 +127,7 @@ public class uiManager : MonoBehaviour
 
     void DelayDisabling()
     {
-        if(ob.activeInHierarchy)
+        if (ob.activeInHierarchy)
             ob.SetActive(false);
         else
             return;

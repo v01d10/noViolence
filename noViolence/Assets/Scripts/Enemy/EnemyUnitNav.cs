@@ -71,7 +71,7 @@ public class EnemyUnitNav : MonoBehaviour
         RaycastHit fHit;
         print("Checking for resource");
 
-        if(Physics.SphereCast(transform.position, resDetectionRad, transform.forward, out fHit, 10))
+        if(Physics.SphereCast(transform.position, resDetectionRad, transform.forward, out fHit))
         {
             if(fHit.collider.CompareTag("Tree"))
             {
@@ -79,13 +79,15 @@ public class EnemyUnitNav : MonoBehaviour
                 MoveTo(fHit.point);
                 unitG.resTarget = fHit.collider.GetComponent<Resource>();
                 unitG.resTarget.Gatherers.Add(unitG);
-                unitG.target = fHit.point;
+                unitG.targetPosition = fHit.point;
                 unitG.enabled = true;
                 LookingForRes = false;
                 Gathering = true;
                 StopCoroutine("WalkAround");
                 yield return null;
             }
+            else 
+                yield return null;
         }
 
         if(LookingForRes)
