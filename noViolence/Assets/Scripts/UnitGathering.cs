@@ -11,6 +11,7 @@ public class UnitGathering : MonoBehaviour
     }
     public CarryType cType;
 
+    [Header("Base Stats")]
     public float MaxCarryAmount;
     public float TotalCarryAmount;
     public float CarryWood;
@@ -21,23 +22,28 @@ public class UnitGathering : MonoBehaviour
 
     public float GatherTime;
     public float gatherAmount;
-    public float RadiusAroundTarget = 1.5f;
+    public float RadiusAroundResource = 1.5f;
 
     public bool toGather;
     public bool toUnload;
     public bool playerUnit;
 
+    [Header("Units")]
     SelectableUnit thisUnit;
     EnemyUnitNav eUnit;
     Resource res;
     public Resource resTarget;
     Warehouse whouse;
     public Vector3 warehouseLocation;
-    public Vector3 target;
+    public Vector3 targetPosition;
     EnemyManager eManager;
+    RaycastHit fHit;
+    public AudioSource gatheringSource;
 
     void Start()
     {
+        gatheringSource = GetComponentInParent<AudioSource>();
+
         if (playerUnit)
         {
             thisUnit = GetComponentInParent<SelectableUnit>();
@@ -55,22 +61,29 @@ public class UnitGathering : MonoBehaviour
             warehouseLocation = whouse.transform.position;
     }
 
+    void Update()
+    {
+        gatheringSource.pitch = TimeManager.instance.timeIncrement;
+    }
+
     void OnTriggerEnter(Collider other)
     {
         if (resTarget != null && other.GetComponent<Resource>() == resTarget && resTarget.Gatherers.Contains(this))
         {
             res = other.GetComponent<Resource>();
-
             toGather = true;
 
-            if (cType.ToString() != res.rType.ToString())
+            if (res.rType == Resource.ResType.Wood)
             {
-                if (res.rType == Resource.ResType.Wood) cType = CarryType.Wood;
-                else if (res.rType == Resource.ResType.Stone) cType = CarryType.Stone;
-                else if (res.rType == Resource.ResType.Berry) cType = CarryType.Berry;
-                else if (res.rType == Resource.ResType.Mushrooms) cType = CarryType.Mushrooms;
-                else if (res.rType == Resource.ResType.Wheat) cType = CarryType.Wheat;
+                cType = CarryType.Wood;
+                print("Playing gathering sound");
+                PlayGatherSound(sfxManager.instance.treeChoping);
             }
+            else if (res.rType == Resource.ResType.Stone) cType = CarryType.Stone;
+            else if (res.rType == Resource.ResType.Berry) cType = CarryType.Berry;
+            else if (res.rType == Resource.ResType.Mushrooms) cType = CarryType.Mushrooms;
+            else if (res.rType == Resource.ResType.Wheat) cType = CarryType.Wheat;
+
 
             StartCoroutine("LoadResource");
 
@@ -84,11 +97,13 @@ public class UnitGathering : MonoBehaviour
         {
             UnloadResouce();
         }
+
     }
 
 
     IEnumerator LoadResource()
     {
+
         if (cType == CarryType.Wood)
             StartCoroutine("LoadWood");
         else if (cType == CarryType.Stone)
@@ -118,26 +133,60 @@ public class UnitGathering : MonoBehaviour
 
     void ResourceDepleted()
     {
-        print("Resource depleted");
         res.RemoveResource(res.TotalAmount);
-        Destroy(res.gameObject, 3);
-        thisUnit.MoveTo(warehouseLocation);
-        eUnit.MoveTo(warehouseLocation);
-        toUnload = true;
-        toGather = false;
-        thisUnit.Agent.isStopped = true;
+        Destroy(res.gameObject);
+
+        if (TotalCarryAmount < MaxCarryAmount)
+        {
+            if (Physics.SphereCast(transform.position, 80, transform.forward, out fHit))
+            {
+                if (fHit.collider.CompareTag("Tree"))
+                {
+                    print("Found " + fHit.collider.tag);
+
+                    res = fHit.collider.GetComponent<Resource>();
+                    resTarget = res;
+                    resTarget.Gatherers.Add(this);
+                    targetPosition = new Vector3(
+                                fHit.point.x + RadiusAroundResource * 2 * Mathf.Cos(2 * Mathf.PI * resTarget.Gatherers.IndexOf(this) / resTarget.Gatherers.Count),
+                                fHit.point.y,
+                                fHit.point.z + RadiusAroundResource * 2 * Mathf.Sin(2 * Mathf.PI * resTarget.Gatherers.IndexOf(this) / resTarget.Gatherers.Count));
+
+                    if (playerUnit)
+                    {
+                        thisUnit.MoveTo(fHit.point);
+                    }
+                    else
+                    {
+
+                        eUnit.Gathering = true;
+                        eUnit.MoveTo(fHit.point);
+                    }
+                }
+                else
+                    print("No trees in reach");
+            }
+        }
+        else
+        {
+            GoToWarehouse();
+            print("Resource depleted");
+            toUnload = true;
+            toGather = false;
+        }
+
+
     }
 
     void GoToWarehouse()
     {
+        gatheringSource.Stop();
         if (playerUnit)
         {
-            thisUnit.Agent.isStopped = false;
             thisUnit.MoveTo(warehouseLocation);
         }
         else
         {
-            eUnit.agent.isStopped = false;
             eUnit.MoveTo(warehouseLocation);
         }
 
@@ -150,9 +199,9 @@ public class UnitGathering : MonoBehaviour
         if (resTarget != null)
         {
             if (playerUnit)
-                thisUnit.MoveTo(target);
+                thisUnit.MoveTo(targetPosition);
             else
-                eUnit.MoveTo(target);
+                eUnit.MoveTo(targetPosition);
 
             toGather = true;
         }
@@ -164,6 +213,12 @@ public class UnitGathering : MonoBehaviour
             else
                 eUnit.agent.isStopped = true;
         }
+    }
+
+    void PlayGatherSound(AudioClip clip)
+    {
+        gatheringSource.clip = clip;
+        gatheringSource.Play();
     }
 
     IEnumerator LoadWood()

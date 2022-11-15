@@ -28,11 +28,20 @@ public class PlayerInput : MonoBehaviour
     private float MouseDownTime;
     private Vector2 StartMousePosition;
 
+    SelectableUnit sUnit;
+[Header("Layers")]
+    public int FloorLayer = 7;
+    public int ResLayer = 8;
+    public int BuildPrefLayer = 9;
+    public int BuildingLayer = 10;
+    public int PlayerUnitLayer = 11;
+    public int EnemyUnitLayer = 12;
+    PlayerBuildingDetection playerBdetection;
+
     [Header("Surround")]
     List<SelectableUnit> selUnits;
     public Transform Target;
     public float RadiusAroundTarget = 0.5f;
-
 
     private void Update()
     {
@@ -45,34 +54,28 @@ public class PlayerInput : MonoBehaviour
         }
     }
 
-
     private void HandleMovementInputs()
     {
-        if (Input.GetKeyUp(KeyCode.Mouse1) && SelectionManager.instance.SelectedUnits.Count > 0)
+        if (Input.GetKeyDown(KeyCode.Mouse1) && SelectionManager.instance.SelectedUnits.Count > 0)
         {
             if (Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out RaycastHit fHit, FloorLayers))
             {
-                int FloorLayer = 7;
-                int ResLayer = 8;
-                int BuildPrefLayer = 9;
-                int BuildingLayer = 10;
-
                 if (fHit.collider.gameObject.layer == FloorLayer)
                 {
+                    selUnits = SelectionManager.instance.SelectedUnits.ToList();
                     print("Clicked " + fHit.collider.gameObject.layer);
-                    foreach (SelectableUnit unit in SelectionManager.instance.SelectedUnits)
+
+                    foreach (SelectableUnit unit in selUnits)
                     {
-                        if (unit.unitGathering.resTarget != null && unit.unitGathering.resTarget.Gatherers.Contains(unit.unitGathering))
+                        sUnit = unit;
+                        sUnit.Agent.isStopped = false;
+
+                        if (sUnit.unitGathering.resTarget != null && sUnit.unitGathering.resTarget.Gatherers.Contains(sUnit.unitGathering))
                         {
-                            unit.unitGathering.resTarget.Gatherers.Remove(unit.unitGathering);
-                            unit.unitGathering.resTarget.placIndex--;
-                            unit.unitGathering.toGather = false;
-                            unit.unitGathering.toUnload = false;
-                            unit.unitGathering.resTarget = null;
-                            unit.unitGathering.StopAllCoroutines();
+                            CancelGathering();
                         }
 
-                        unit.MoveTo(fHit.point);
+                        sUnit.MoveTo(fHit.point);
                     }
                 }
 
@@ -83,21 +86,24 @@ public class PlayerInput : MonoBehaviour
                     print("Clicked " + fHit.collider.tag);
                     int i = 0;
 
-                    foreach (SelectableUnit unit in SelectionManager.instance.SelectedUnits)
+                    foreach (SelectableUnit unit in selUnits)
                     {
+                        sUnit = unit;
+                        sUnit.Agent.isStopped = false;
+
                         if (i < fHit.collider.GetComponent<Resource>().MaxGatherers && fHit.collider.GetComponent<Resource>().Gatherers.Count < 3)
                         {
-                            unit.unitGathering.StopAllCoroutines();
-                            unit.unitGathering.resTarget = fHit.collider.GetComponent<Resource>();
-                            unit.unitGathering.resTarget.Gatherers.Add(unit.unitGathering);
+                            sUnit.unitGathering.StopAllCoroutines();
+                            sUnit.unitGathering.resTarget = fHit.collider.GetComponent<Resource>();
+                            sUnit.unitGathering.resTarget.Gatherers.Add(sUnit.unitGathering);
 
-                            unit.unitGathering.target = new Vector3(
-                                Target.position.x + RadiusAroundTarget * Mathf.Cos(2 * Mathf.PI * i / selUnits.Count),
+                            sUnit.unitGathering.targetPosition = new Vector3(
+                                Target.position.x + sUnit.unitGathering.RadiusAroundResource * Mathf.Cos(2 * Mathf.PI * sUnit.unitGathering.resTarget.Gatherers.IndexOf(sUnit.unitGathering) / sUnit.unitGathering.resTarget.Gatherers.Count),
                                 Target.position.y,
-                                Target.position.z + RadiusAroundTarget * Mathf.Sin(2 * Mathf.PI * i / selUnits.Count));
-                            unit.MoveTo(Target.position);
+                                Target.position.z + sUnit.unitGathering.RadiusAroundResource * Mathf.Sin(2 * Mathf.PI * sUnit.unitGathering.resTarget.Gatherers.IndexOf(sUnit.unitGathering) / sUnit.unitGathering.resTarget.Gatherers.Count));
+                            sUnit.MoveTo(Target.position);
 
-                            unit.unitGathering.toUnload = false;
+                            sUnit.unitGathering.toUnload = false;
                             i++;
                         }
                         else
@@ -107,32 +113,34 @@ public class PlayerInput : MonoBehaviour
 
                 else if (fHit.collider.gameObject.layer == BuildPrefLayer)
                 {
+                    PlayerBuildPrefab selBuildPrefab = fHit.collider.GetComponent<PlayerBuildPrefab>();
+                    Vector3 placementPosition = selBuildPrefab.transform.position;
                     selUnits = SelectionManager.instance.SelectedUnits.ToList();
                     Target = fHit.transform;
                     print("Clicked " + fHit.collider.tag);
-                    PlayerBuildPrefab selBuildPrefab = fHit.collider.GetComponent<PlayerBuildPrefab>();
                     int i = 0;
 
-                    foreach (SelectableUnit unit in SelectionManager.instance.SelectedUnits)
+                    foreach (SelectableUnit unit in selUnits)
                     {
-                        if (unit.unitGathering.resTarget != null && unit.unitGathering.resTarget.Gatherers.Contains(unit.unitGathering))
+                        sUnit = unit;
+                        sUnit.Agent.isStopped = false;
+
+                        if (sUnit.unitGathering.resTarget != null && sUnit.unitGathering.resTarget.Gatherers.Contains(sUnit.unitGathering))
                         {
-                            unit.unitGathering.resTarget.Gatherers.Remove(unit.unitGathering);
-                            unit.unitGathering.resTarget.placIndex--;
-                            unit.unitGathering.toGather = false;
-                            unit.unitGathering.toUnload = false;
-                            unit.unitGathering.resTarget = null;
-                            unit.unitGathering.StopAllCoroutines();
+                            CancelGathering();
                         }
 
-                        if (i < 3 && selBuildPrefab.buildingUnits.Count < 3)
+                        if (i < 3 && selBuildPrefab.buildingUnits.Count < 3 && !selBuildPrefab.buildingUnits.Contains(sUnit.GetComponent<PlayerUnit>()))
                         {
-                            PlayerUnit selUnit = unit.GetComponent<PlayerUnit>();
-                            selBuildPrefab.buildingUnits.Add(selUnit);
-                            unit.MoveTo(Target.position);
+                            selBuildPrefab.buildingUnits.Add(sUnit.GetComponent<PlayerUnit>());
+                            Target.position = new Vector3(
+                                Target.position.x + RadiusAroundTarget * 2 * Mathf.Cos(2 * Mathf.PI * i / selUnits.Count),
+                                Target.position.y,
+                                Target.position.z + RadiusAroundTarget * 2 * Mathf.Sin(2 * Mathf.PI * i / selUnits.Count));
+                            selBuildPrefab.transform.position = placementPosition;
+                            sUnit.MoveTo(Target.position);
                             i++;
                         }
-
                     }
                 }
 
@@ -140,8 +148,54 @@ public class PlayerInput : MonoBehaviour
                 {
                     if (fHit.collider.gameObject.CompareTag("Kitchen"))
                     {
+                        selUnits = SelectionManager.instance.SelectedUnits.ToList();
+                        Target = fHit.transform;
+                        print("Clicked " + fHit.collider.tag);
                         Kitchen selKitchen = fHit.collider.GetComponent<Kitchen>();
 
+                        foreach (SelectableUnit unit in selUnits)
+                        {
+                            sUnit = unit;
+                            sUnit.Agent.isStopped = false;
+
+                            if (sUnit.unitGathering.resTarget != null && sUnit.unitGathering.resTarget.Gatherers.Contains(sUnit.unitGathering))
+                            {
+                                CancelGathering();
+                            }
+
+                            if (selKitchen.workingUnits.Count < selKitchen.maxWorkingUnits && !selKitchen.workingUnits.Contains(sUnit.GetComponent<PlayerUnit>()))
+                            {
+                                playerBdetection = sUnit.GetComponentInChildren<PlayerBuildingDetection>();
+                                playerBdetection._selKitchen = selKitchen;
+                                selKitchen.workingUnits.Add(sUnit.GetComponent<PlayerUnit>());
+                                sUnit.MoveTo(Target.position);
+                            }
+                        }
+                    }
+                }
+
+                else if (fHit.collider.gameObject.layer == EnemyUnitLayer)
+                {
+                    selUnits = SelectionManager.instance.SelectedUnits.ToList();
+                    Target = fHit.transform;
+                    print("Clicked " + fHit.collider.tag);
+                    EnemyUnit eUnit = fHit.collider.GetComponent<EnemyUnit>();
+
+                    foreach (SelectableUnit unit in selUnits)
+                    {
+                        sUnit = unit;
+                        sUnit.Agent.isStopped = false;
+
+                        PlayerUnit pUnit = sUnit.GetComponent<PlayerUnit>();
+
+                        if (sUnit.unitGathering.resTarget != null && sUnit.unitGathering.resTarget.Gatherers.Contains(sUnit.unitGathering))
+                        {
+                            CancelGathering();
+                        }
+
+                        CombatDetection combatDetection = sUnit.GetComponentInChildren<CombatDetection>();
+                        combatDetection.pUnitTarget = eUnit;
+                        sUnit.MoveTo(Target.position);
                     }
                 }
             }
@@ -167,23 +221,23 @@ public class PlayerInput : MonoBehaviour
             SelectionBox.gameObject.SetActive(false);
 
             if (Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, Mathf.Infinity, UnitLayers)
-            && hit.collider.TryGetComponent<SelectableUnit>(out SelectableUnit unit))
+            && hit.collider.TryGetComponent<SelectableUnit>(out SelectableUnit sUnit))
             {
                 if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
                 {
-                    if (SelectionManager.instance.IsSelected(unit))
+                    if (SelectionManager.instance.IsSelected(sUnit))
                     {
-                        SelectionManager.instance.Deselect(unit);
+                        SelectionManager.instance.Deselect(sUnit);
                     }
                     else
                     {
-                        SelectionManager.instance.Select(unit);
+                        SelectionManager.instance.Select(sUnit);
                     }
                 }
                 else
                 {
                     SelectionManager.instance.DeselectAll();
-                    SelectionManager.instance.Select(unit);
+                    SelectionManager.instance.Select(sUnit);
                 }
             }
             else if (MouseDownTime + DragDelay > Time.time)
@@ -222,4 +276,16 @@ public class PlayerInput : MonoBehaviour
     {
         return Position.x > Bounds.min.x && Position.x < Bounds.max.x && Position.y > Bounds.min.y && Position.y < Bounds.max.y;
     }
+
+    void CancelGathering()
+    {
+        sUnit.unitGathering.resTarget.Gatherers.Remove(sUnit.unitGathering);
+        sUnit.unitGathering.resTarget.placIndex--;
+        sUnit.unitGathering.toGather = false;
+        sUnit.unitGathering.toUnload = false;
+        sUnit.unitGathering.resTarget = null;
+        sUnit.unitGathering.gatheringSource.Stop();
+        sUnit.unitGathering.StopAllCoroutines();
+    }
+
 }
