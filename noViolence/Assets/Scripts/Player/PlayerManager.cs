@@ -5,9 +5,14 @@ using UnityEngine;
 public class PlayerManager : MonoBehaviour
 {
     public static PlayerManager instance;
-    void Awake() {instance = this;}
-    
+    void Awake() { instance = this; }
+
     public Warehouse playerWarehouse;
-    
-    public bool playerBuilding;
+
+    public GameObject[] unitModels;
+    public GameObject playerUnitHolder;
+
+    public float WritingProgress;
+
+
 }

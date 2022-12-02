@@ -14,17 +14,13 @@ public class uiManager : MonoBehaviour
     public GameObject BuildScroll;
     public GameObject WarehouseScroll;
     public GameObject MainBuildingScroll;
+    public GameObject KitchenScroll;
+    public GameObject ChurchScroll;
+    public GameObject MineScroll;
 
     [Header("MainBuilding")]
     public TextMeshProUGUI apostleAmount;
     public TextMeshProUGUI apostleMaxAmount;
-
-    [Header("Warehouse")]
-    public TextMeshProUGUI woodText;
-    public TextMeshProUGUI stoneText;
-    public TextMeshProUGUI berriesText;
-    public TextMeshProUGUI MushroomsText;
-    public TextMeshProUGUI WheatText;
 
     public Animator mainPanelAnimator;
     bool mainPanelOpened;
@@ -32,17 +28,15 @@ public class uiManager : MonoBehaviour
 
     [Header("Shakes")]
     public ShakeData buildShake;
-    
-    void Start()
+
+    public void OpenMainPanel()
     {
-        mainPanelAnimator = GetComponent<Animator>();
-    }
-    void OpenMainPanel()
-    {
+        DisableScrolls();
+
         if (!mainPanelOpened)
         {
-            mainPanelAnimator.Play("mainPanelOpen");
-            mainPanelOpened = true;
+            LeanTween.moveLocalY(MainPanel, -255, 0.7f).setEaseInOutBounce().setOnComplete(() =>
+            { mainPanelOpened = true; });
         }
         else
         {
@@ -52,17 +46,16 @@ public class uiManager : MonoBehaviour
 
     void CloseMainPanel()
     {
-        mainPanelAnimator.Play("mainPanelClose");
-        mainPanelOpened = false;
+        LeanTween.moveLocalY(MainPanel, -850, 0.7f).setEaseOutBounce().setOnComplete(() => { mainPanelOpened = false; DisableScrolls(); });
     }
 
     public void OpenBuildScroll()
     {
         if (!BuildScroll.activeInHierarchy)
         {
-            if(!mainPanelOpened)
+            if (!mainPanelOpened)
                 OpenMainPanel();
-                
+
             DisableScrolls();
             BuildScroll.SetActive(true);
         }
@@ -72,11 +65,11 @@ public class uiManager : MonoBehaviour
         }
     }
 
-    public void OpenMainBuildingPanel()
+    public void OpenMainBuildingScroll()
     {
         if (!MainBuildingScroll.activeInHierarchy)
         {
-            if(!mainPanelOpened)
+            if (!mainPanelOpened)
                 OpenMainPanel();
 
             DisableScrolls();
@@ -92,12 +85,60 @@ public class uiManager : MonoBehaviour
     {
         if (!WarehouseScroll.activeInHierarchy)
         {
-            if(!mainPanelOpened)
+            if (!mainPanelOpened)
                 OpenMainPanel();
-                
+
             DisableScrolls();
             WarehouseScroll.SetActive(true);
             PlayerManager.instance.playerWarehouse.LoadResourceText();
+        }
+        else
+        {
+            CloseMainPanel();
+        }
+    }
+
+    public void OpenKitchenScroll()
+    {
+        if (!KitchenScroll.activeInHierarchy)
+        {
+            if (!mainPanelOpened)
+                OpenMainPanel();
+
+            DisableScrolls();
+            KitchenScroll.SetActive(true);
+        }
+        else
+        {
+            CloseMainPanel();
+        }
+    }
+
+    public void OpenChurchScroll()
+    {
+        if (!ChurchScroll.activeInHierarchy)
+        {
+            if (!mainPanelOpened)
+                OpenMainPanel();
+
+            DisableScrolls();
+            ChurchScroll.SetActive(true);
+        }
+        else
+        {
+            CloseMainPanel();
+        }
+    }
+
+    public void OpenMineScroll()
+    {
+        if (!MineScroll.activeInHierarchy)
+        {
+            if (!mainPanelOpened)
+                OpenMainPanel();
+
+            DisableScrolls();
+            MineScroll.SetActive(true);
         }
         else
         {
@@ -116,8 +157,16 @@ public class uiManager : MonoBehaviour
         if (MainBuildingScroll.activeInHierarchy)
             MainBuildingScroll.SetActive(false);
 
+        if (KitchenScroll.activeInHierarchy)
+            KitchenScroll.SetActive(false);
 
+        if (ChurchScroll.activeInHierarchy)
+            ChurchScroll.SetActive(false);
+
+        if (MineScroll.activeInHierarchy)
+            MineScroll.SetActive(false);
     }
+
 
     void DisableObject(GameObject obj, float time)
     {

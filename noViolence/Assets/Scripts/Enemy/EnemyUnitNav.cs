@@ -27,11 +27,11 @@ public class EnemyUnitNav : MonoBehaviour
         StartCoroutine("WalkAround");
     }
 
-    void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawSphere(transform.position, resDetectionRad);
-    }
+    // void OnDrawGizmos()
+    // {
+    //     Gizmos.color = Color.red;
+    //     Gizmos.DrawSphere(transform.position, resDetectionRad);
+    // }
 
     public void MoveTo(Vector3 location)
     {

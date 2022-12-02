@@ -23,7 +23,7 @@ public class CameraController : MonoBehaviour
     public Vector3 rotateStartPosition;
     public Vector3 rotateCurrentPosition;
 
-[Header("Zoom")]
+    [Header("Zoom")]
     public float distance;
     public float sensitivityDistance = 50;
     public float damping = 5;
@@ -105,6 +105,7 @@ public class CameraController : MonoBehaviour
 
     void HandleMovementInput()
     {
+
         if (!Input.GetKey(KeyCode.LeftShift))
             movementSpeed = normalSpeed;
         else
@@ -127,15 +128,16 @@ public class CameraController : MonoBehaviour
             newPosition += (transform.right * -movementSpeed);
         }
 
-        if (Input.GetKey(KeyCode.Q) && !PlayerManager.instance.playerBuilding)
+        if (Input.GetKey(KeyCode.Q) && !PlayerBuildManager.instance.playerBuilding)
         {
             newRotation *= Quaternion.Euler(Vector3.up * rotationAmount);
         }
-        if (Input.GetKey(KeyCode.E) && !PlayerManager.instance.playerBuilding)
+        if (Input.GetKey(KeyCode.E) && !PlayerBuildManager.instance.playerBuilding)
         {
             newRotation *= Quaternion.Euler(Vector3.up * -rotationAmount);
         }
 
+        
         transform.position = Vector3.Lerp(transform.position, newPosition, Time.fixedDeltaTime * movementTime);
         transform.rotation = Quaternion.Lerp(transform.rotation, newRotation, Time.fixedDeltaTime * movementTime);
     }

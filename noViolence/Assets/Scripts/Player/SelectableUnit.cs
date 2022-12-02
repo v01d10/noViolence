@@ -9,13 +9,14 @@ public class SelectableUnit : MonoBehaviour
     public NavMeshAgent Agent;
     [SerializeField]
     private SpriteRenderer SelectionSprite;
-    public UnitGathering unitGathering;
+    public PlayerUnit thisPunit;
+
 
     private void Awake()
     {
         SelectionManager.instance.AvailableUnits.Add(this);
         Agent = GetComponent<NavMeshAgent>();
-        unitGathering = GetComponentInChildren<UnitGathering>();
+        thisPunit = GetComponent<PlayerUnit>();
     }
 
     public void MoveTo(Vector3 Position)

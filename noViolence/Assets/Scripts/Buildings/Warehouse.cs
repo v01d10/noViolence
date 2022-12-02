@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using static WarehouseUI;
 
 public class Warehouse : MonoBehaviour
 {
@@ -18,16 +19,23 @@ public class Warehouse : MonoBehaviour
     public float foodAmount;
     public float foodMaxAmount;
 
-[Header("SideAmounts")]
+    [Header("SideAmounts")]
     public float berryAmount;
     public float berryMaxAmount;
-    public float mushroomsAmount;
-    public float mushroomsMaxAmount;
+    public float shroomAmount;
+    public float shroomMaxAmount;
     public float wheatAmount;
     public float wheatMaxAmount;
+    public float potatoAmount;
+    public float potatoesMaxAmount;
+    public float honeyAmount;
+    public float honeyMaxAmount;
+    public float ironAmount;
+    public float ironMaxAmount;
+
     void Start()
     {
-        if(PlayerWarehouse)
+        if (PlayerWarehouse)
         {
             PlayerManager.instance.playerWarehouse = this;
             LoadResourceText();
@@ -39,13 +47,19 @@ public class Warehouse : MonoBehaviour
     {
         if (PlayerWarehouse)
         {
-            uiManager.instance.woodText.text = woodAmount.ToString();
-            uiManager.instance.stoneText.text = stoneAmount.ToString();
-            uiManager.instance.berriesText.text = berryAmount.ToString();
-            uiManager.instance.MushroomsText.text = mushroomsAmount.ToString();
-            uiManager.instance.WheatText.text = wheatAmount.ToString();
+            whouseUI.woodText.text = woodAmount.ToString();
+            whouseUI.maxWoodText.text = woodMaxAmount.ToString();
+            whouseUI.stoneText.text = stoneAmount.ToString();
+            whouseUI.maxStoneText.text = stoneMaxAmount.ToString();
+            whouseUI.foodText.text = foodAmount.ToString();
+            whouseUI.maxFoodText.text = foodMaxAmount.ToString();
+            whouseUI.berryText.text = berryAmount.ToString();
+            whouseUI.maxBerryText.text = berryMaxAmount.ToString();
+            whouseUI.shroomText.text = shroomAmount.ToString();
+            whouseUI.maxShroomText.text = shroomMaxAmount.ToString();
+
         }
-        else 
+        else
             return;
     }
 }

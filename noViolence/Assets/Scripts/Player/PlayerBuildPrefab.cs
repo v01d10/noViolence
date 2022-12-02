@@ -15,10 +15,10 @@ public class PlayerBuildPrefab : MonoBehaviour
 
     float buildTimerPerc;
 
-    public GameObject prefab;
     public GameObject model;
 
     public bool isMoving;
+    public bool isRotating;
     public bool isBuilding;
 
     public LayerMask blockBuildLayer;
@@ -49,8 +49,8 @@ public class PlayerBuildPrefab : MonoBehaviour
     void Awake()
     {
         cam = Camera.main;
-        prefabAnimator = GetComponentInChildren<Animator>();
-        prefabRenderer = prefab.GetComponentsInChildren<MeshRenderer>();
+        prefabAnimator = GetComponent<Animator>();
+        prefabRenderer = GetComponentsInChildren<MeshRenderer>();
         SmokePoof = GetComponentInChildren<VisualEffect>();
 
         isMoving = true;
@@ -60,8 +60,29 @@ public class PlayerBuildPrefab : MonoBehaviour
     {
         ray = cam.ScreenPointToRay(Input.mousePosition);
 
-        Placing();
-        Building();
+        if (isMoving)
+        {
+            Placing();
+        }
+        else if (isRotating)
+        {
+            rotatePrefab();
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                placePrefab();
+            }
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                isMoving = true;
+                isRotating = false;
+            }
+        }
+        else if (isBuilding)
+        {
+            Building();
+
+        }
     }
 
     void Placing()
@@ -69,7 +90,7 @@ public class PlayerBuildPrefab : MonoBehaviour
         if (Physics.Raycast(ray, out hit) && isMoving)
         {
             movePrefab();
-            rotatePrefab();
+
             if (!Physics.CheckBox(transform.position, halfExt, transform.rotation, blockBuildLayer))
             {
                 for (int i = 0; i < prefabRenderer.Length; i++)
@@ -79,7 +100,10 @@ public class PlayerBuildPrefab : MonoBehaviour
                 }
                 if (Input.GetMouseButtonDown(0))
                 {
-                    placePrefab();
+                    isMoving = false;
+                    isRotating = true;
+                    isBuilding = false;
+                    sfxManager.instance.PlayBuildRotateSound();
                 }
             }
             else
@@ -113,63 +137,70 @@ public class PlayerBuildPrefab : MonoBehaviour
                         return;
                 }
 
+
                 buildTimerPerc = buildTimer / buildTime;
                 buildBar.fillAmount = buildTimerPerc;
                 buildTimerText.text = Mathf.Round(buildTimer).ToString();
 
                 if (buildTimer <= 0)
                 {
-                    sfxManager.instance.PlaySFX(sfxManager.instance.buildComplete);
+                    LeanAudio.play(sfxManager.instance.buildComplete);
+                    Notifier.instance.Notify("Building completed!");
                     isBuilding = false;
-                    transform.parent.gameObject.layer = 10;
+                    transform.parent.transform.parent.gameObject.layer = 10;
+                    transform.parent.transform.parent.position = transform.position;
                     model.SetActive(true);
-                    Destroy(prefab);
-                    Destroy(this);
+                    Destroy(gameObject);
                 }
             }
             else
             {
                 noBuilderIcon.SetActive(true);
                 buildTimerText.gameObject.SetActive(false);
-                prefabAnimator.Play("noBuilderPulse");
             }
         }
     }
 
     void movePrefab()
     {
-        buildPos = new Vector3(hit.point.x, 0, hit.point.z);
-        transform.position = buildPos;
-        print(buildPos);
+        if (hit.transform.gameObject.layer != 9)
+        {
+            buildPos = hit.point;
+            transform.parent.transform.parent.position = buildPos;
+            transform.parent.transform.parent.rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+            print(buildPos);
+
+        }
     }
 
     void rotatePrefab()
     {
-        if (Input.GetKey(KeyCode.Q))
+        if (Input.GetKeyDown(KeyCode.Q))
         {
-            transform.RotateAround(transform.position, Vector3.up, 60 * Time.deltaTime);
+            transform.RotateAround(transform.parent.transform.parent.position, Vector3.up, 45);
         }
-        else if (Input.GetKey(KeyCode.E))
+        else if (Input.GetKeyDown(KeyCode.E))
         {
-            transform.RotateAround(transform.position, -Vector3.up, 60 * Time.deltaTime);
+            transform.RotateAround(transform.parent.transform.position, -Vector3.up, 45);
         }
     }
 
     void placePrefab()
     {
-        gameObject.layer = 9;
+        transform.parent.transform.parent.gameObject.layer = 9;
+        PlayerBuildingHolder.instance.PlayerBuildings.Add(transform.parent.transform.parent.GetComponent<Building>());
         CameraShakerHandler.Shake(uiManager.instance.buildShake);
-        sfxManager.instance.PlaySFX(sfxManager.instance.buildPlacement);
+        LeanAudio.play(sfxManager.instance.buildPlacement);
         Invoke("PlaySmoke", smokePlayDelay);
 
         transform.position = buildPos;
-        prefabAnimator.SetTrigger("Place");
 
-        isBuilding = true;
         isMoving = false;
-        PlayerManager.instance.playerBuilding = false;
+        isRotating = false;
+        isBuilding = true;
+        PlayerBuildManager.instance.playerBuilding = false;
         buildTimer = buildTime;
-        buildBar.gameObject.SetActive(true);
+        buildBarCanvas.SetActive(true);
     }
 
     void PlaySmoke()

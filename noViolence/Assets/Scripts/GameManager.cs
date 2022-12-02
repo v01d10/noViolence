@@ -6,7 +6,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
 
-    public List<string> UnitNames;
+    public string[] UnitNames;
     
     void Awake()
     {
